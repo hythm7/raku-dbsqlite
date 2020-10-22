@@ -4,7 +4,7 @@ use Test::When <extended>;
 
 use DB::SQLite::Native;
 
-plan 14;
+plan 15;
 
 ok DB::SQLite::Native.libversion, 'libversion';
 
@@ -12,6 +12,9 @@ is DB::SQLite::Native.threadsafe, 1, 'threadsafe';
 
 isa-ok my $sl = DB::SQLite::Native.open(':memory:'),
     DB::SQLite::Native, 'native database handle';
+
+isa-ok my $sf = DB::SQLite::Native.open('test.sqlite3', flags => SQLITE_OPEN_READONLY),
+    DB::SQLite::Native, 'native database handle with flags';
 
 is $sl.busy-timeout(10000), 0, 'set busy timeout';
 

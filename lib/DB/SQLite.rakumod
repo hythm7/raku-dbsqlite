@@ -5,11 +5,12 @@ use DB::SQLite::Connection;
 class DB::SQLite does DB
 {
     has $.filename = '';
+    has $.flags;
     has $.busy-timeout = 10000;
 
     method connect(--> DB::SQLite::Connection)
     {
-        my $conn = DB::SQLite::Native.open($!filename);
+        my $conn = DB::SQLite::Native.open($!filename, :$!flags);
         $conn.busy-timeout($_) with $!busy-timeout;
         DB::SQLite::Connection.new(owner => self, :$conn)
     }

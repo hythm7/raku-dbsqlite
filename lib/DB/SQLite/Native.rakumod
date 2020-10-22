@@ -1,4 +1,4 @@
-use NativeLibs:ver<0.0.7>:auth<github:salortiz>;
+use NativeLibs:auth<github:salortiz>;
 
 sub LIBSQLITE {
     NativeLibs::Searcher.at-runtime(
@@ -17,6 +17,30 @@ enum SQLITE_TYPE (
     SQLITE_TEXT    => 3,
     SQLITE_BLOB    => 4,
     SQLITE_NULL    => 5
+);
+
+enum SQLITE_FILE_OPEN_FLAGS (
+    SQLITE_OPEN_READONLY      => 0x00000001,
+    SQLITE_OPEN_READWRITE     => 0x00000002,
+    SQLITE_OPEN_CREATE        => 0x00000004,
+    SQLITE_OPEN_DELETEONCLOSE => 0x00000008,
+    SQLITE_OPEN_EXCLUSIVE     => 0x00000010,
+    SQLITE_OPEN_AUTOPROXY     => 0x00000020,
+    SQLITE_OPEN_URI           => 0x00000040,
+    SQLITE_OPEN_MEMORY        => 0x00000080,
+    SQLITE_OPEN_MAIN_DB       => 0x00000100,
+    SQLITE_OPEN_TEMP_DB       => 0x00000200,
+    SQLITE_OPEN_TRANSIENT_DB  => 0x00000400,
+    SQLITE_OPEN_MAIN_JOURNAL  => 0x00000800,
+    SQLITE_OPEN_TEMP_JOURNAL  => 0x00001000,
+    SQLITE_OPEN_SUBJOURNAL    => 0x00002000,
+    SQLITE_OPEN_SUPER_JOURNAL => 0x00004000,
+    SQLITE_OPEN_NOMUTEX       => 0x00008000,
+    SQLITE_OPEN_FULLMUTEX     => 0x00010000,
+    SQLITE_OPEN_SHAREDCACHE   => 0x00020000,
+    SQLITE_OPEN_PRIVATECACHE  => 0x00040000,
+    SQLITE_OPEN_WAL           => 0x00080000,
+    SQLITE_OPEN_NOFOLLOW      => 0x01000000
 );
 
 my constant NULL = Pointer;
@@ -174,14 +198,24 @@ class DB::SQLite::Native
     sub sqlite3_open(Str $filename, DB::SQLite::Native $handle is rw --> int32)
         is native(LIBSQLITE) {}
 
+    sub sqlite3_open_v2(Str $filename,
+                        DB::SQLite::Native $handle is rw,
+                        int32 $flags,
+                        Str $zVfs --> int32)
+        is native(LIBSQLITE) {}
+
+
+
     method close( --> int32)
         is native(LIBSQLITE) is symbol('sqlite3_close_v2') {}
 
-    method open(Str:D $filename --> DB::SQLite::Native)
+    method open(Str:D $filename, :$flags --> DB::SQLite::Native)
     {
         my DB::SQLite::Native $handle .= new;
         UNDO .close with $handle;
-        $.check(sqlite3_open($filename, $handle));
+        $flags
+            ??  $.check(sqlite3_open_v2($filename, $handle, $flags, Str))
+            !!  $.check(sqlite3_open($filename, $handle));
         return $handle;
     }
 
